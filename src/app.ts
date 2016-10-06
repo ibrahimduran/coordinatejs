@@ -29,6 +29,11 @@ class DimensionMap {
     this.set(new Dimension(), '+');
   }
 
+  setOrigin(dimension:(Dimension|DimensionInterface)) {
+    const dim = (dimension instanceof Dimension ? dimension : new Dimension(dimension.x, dimension.y));
+    this.origin = dim;
+  }
+
   get(position:(Dimension|DimensionInterface)):any {
     const dim = (position instanceof Dimension ? position : Dimension.create(position));
     const keys = this.dimensionToKeys(dim);
@@ -154,10 +159,25 @@ class DimensionMap {
   }
 }
 
-const map = new DimensionMap({ x: 7, y: 9 });
-const pos1 = { x: 3, y: -3 };
-const pos2 = { x: 2, y: -3 };
+const map = new DimensionMap({ x: 7, y: 7 });
 
+console.log('7x7 koordinate düzlemi - merkez nokta ortada');
 map.display();
-map.expand(Direction.Left, 6);
+
+console.log('(2, 3) ve (2, -1) noktalarına değer atanmış hali');
+map.set({ x: 2, y: 3 }, 4);
+map.set({ x: 2, y: -1 }, 3);
+map.display();
+
+console.log('(2, 3) ve (2, -1) noktalarının yer değiştirmiş hali');
+map.replace({ x: 2, y: 3 }, { x: 2, y: -1 });
+map.display();
+
+console.log('düzlemin sola doğru 4 birim ve aşağı doğru 2 birim genişletilmiş hali');
+map.expand(Direction.Left, 4);
+map.expand(Direction.Down, 2);
+map.display();
+
+console.log('merkezin (2, 2) noktasına ayarlandığı hali');
+map.setOrigin(new Dimension(2, 2));
 map.display();
