@@ -1,7 +1,4 @@
-interface Dimension {
-  x: number,
-  y: number
-}
+import Dimension, { DimensionInterface } from './dimension';
 
 enum Direction {
   Up = 0,
@@ -14,11 +11,12 @@ class DimensionMap {
   private map:Array<Array<number>>;
   private origin: Dimension;
 
-  constructor(size:Dimension = {x: 0, y: 0}, origin:Dimension = null) {
-    this.map = new Array(size.y).fill(1).map(() => new Array(size.x).fill(0));
+  constructor(size:(Dimension|DimensionInterface), origin:Dimension = null) {
+    this.map = (size instanceof Dimension ? size : Dimension.create(size))
+      .generateArray();
 
     if (origin === null) {
-      origin = { x: Math.floor(size.x / 2), y: Math.floor(size.y / 2) };
+      origin = new Dimension(Math.floor(size.x / 2), Math.floor(size.y / 2));
     } else {
       try {
         this.map[origin.y][origin.x];
@@ -28,11 +26,12 @@ class DimensionMap {
     }
 
     this.origin = origin;
-    this.set({ x: 0, y: 0 }, '+');
+    this.set(new Dimension(), '+');
   }
 
-  get(position:Dimension):any {
-    const keys = this.dimensionToKeys(position);
+  get(position:(Dimension|DimensionInterface)):any {
+    const dim = (position instanceof Dimension ? position : Dimension.create(position));
+    const keys = this.dimensionToKeys(dim);
 
     try {
       return this.map[keys.y][keys.x];
@@ -41,7 +40,8 @@ class DimensionMap {
     }
   }
 
-  dimensionToKeys(dim:Dimension):Dimension {
+  dimensionToKeys(dim:(Dimension|DimensionInterface)) {
+    dim = (dim instanceof Dimension ? dim : Dimension.create(dim));
     let keyX = dim.x, keyY = dim.y;
 
     if (dim.x <= 0) keyX = this.origin.x + Math.abs(keyX);
@@ -52,8 +52,9 @@ class DimensionMap {
     return { x: keyX, y: keyY };
   }
 
-  set(position:Dimension, value:any) {
-    const keys = this.dimensionToKeys(position);
+  set(position:(Dimension|DimensionInterface), value:any) {
+    const dim = (position instanceof Dimension ? position : Dimension.create(position));
+    const keys = this.dimensionToKeys(dim);
 
     try {
       this.map[keys.y][keys.x] = value;
@@ -62,9 +63,10 @@ class DimensionMap {
     }
   }
 
-  move(position:Dimension, destination:(Dimension|Direction)):Dimension {
-    const val = this.get(position);
-    let newPosition:Dimension = { x: position.x, y: position.y };
+  move(position:(Dimension|DimensionInterface), destination:(Dimension|Direction)):Dimension {
+    const dim = (position instanceof Dimension ? position : Dimension.create(position));
+    const val = this.get(dim);
+    let newPosition:Dimension = new Dimension(dim.x, dim.y);
 
     switch (destination) {
       case Direction.Up: newPosition.y--; break;
@@ -80,12 +82,12 @@ class DimensionMap {
     return newPosition;
   }
 
-  replace(positionX:Dimension, positionY:Dimension) {
-    const valX = this.get(positionX);
-    const valY = this.get(positionY);
+  replace(pos1:(Dimension|DimensionInterface), pos2:(Dimension|DimensionInterface)) {
+    const val1 = this.get(pos1);
+    const val2 = this.get(pos2);
 
-    this.set(positionX, valY);
-    this.set(positionY, valX);
+    this.set(pos1, val2);
+    this.set(pos2, val1);
   }
 
   display() {
@@ -114,20 +116,11 @@ class DimensionMap {
     console.log();
   }
 
-  reverseDirection(direction:Direction) {
-      switch (direction) {
-        case Direction.Up: return Direction.Down;
-        case Direction.Left: return Direction.Right;
-        case Direction.Down: return Direction.Up;
-        case Direction.Right: return Direction.Left;
-      }
-  }
-
   expand(direction:Direction, unit:number = 1) {
     if (unit === 0) return;
 
     if (unit < 0) {
-      direction = this.reverseDirection(direction);
+      direction = DimensionMap.reverseDirection(direction);
       unit = Math.abs(unit);
     }
 
@@ -149,6 +142,15 @@ class DimensionMap {
     }
 
     if ((--unit) > 0) return this.expand(direction, unit);
+  }
+
+  static reverseDirection(direction:Direction) {
+    switch (direction) {
+      case Direction.Up: return Direction.Down;
+      case Direction.Left: return Direction.Right;
+      case Direction.Down: return Direction.Up;
+      case Direction.Right: return Direction.Left;
+    }
   }
 }
 
